@@ -341,7 +341,7 @@ async def handler_subscribe (message: types.Message, state:FSMContext):
                                        по иным альтам')
             await Testing_state.get_pure_alt_move.set()
             while (True):
-                await asyncio.sleep(value)
+                await asyncio.sleep(value*60)
                 async with state.proxy() as data:
                     if data['price'][coin]['clean_price_movement']['active']==True:
                         data['active_coin'] = coin
