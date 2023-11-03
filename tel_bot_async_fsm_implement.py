@@ -17,12 +17,15 @@ from aiogram.dispatcher import FSMContext
 
 from messages import START_MESSAGE
 from async_script_fsm_implement import set_starting_data, subscribe, string_handling, \
-                                 subscribe_1, get_yesterday_data_price, check_actual_price_mov_data, \
-                                 check_actual_alt_state, check_actual_btc_history, get_last_week_coin_history, \
-                                 get_historical_pure_price_mov, check_historical_pure_price_mov_data, clearning_str, handler_history_data, check_symbol
+                                 subscribe_1, check_actual_price_mov_data, \
+                                 check_actual_alt_state, check_actual_btc_history,\
+                                 check_historical_pure_price_mov_data, clearning_str, handler_history_data,\
+                                 get_choose_token, get_list_percentage_change, get_list_tokens_data,\
+                                 get_coin_price_percentage_change
+                                 
 
-from keyboards import keyb_client, keyb_client_1, keyb_client_2, keyb_client_3
-from models import SymbolCoinError, Responce_template
+from keyboards import keyb_client, keyb_client_1, keyb_client_2, keyb_client_3, keyb_client_4
+from models import SymbolCoinError
 
 
 load_dotenv()
@@ -33,6 +36,9 @@ sin_disp = Dispatcher(sin_bot, storage=my_storage,)
 
 class Testing_state(StatesGroup):
     get_btc_historical_data = State()
+    request_period_btc_async = State()
+    request_search_range = State()
+    get_search_alt_for_trading = State()
     get_alt_historical_data = State()
     get_pure_alt_move = State()
     request_subscribe = State()
@@ -79,6 +85,29 @@ async def history_handler(message, state:FSMContext):
     except TimeoutError as e:
         await sin_bot.send_message(user_id, f"Повторите запрос через {e.args[0]} секунд")
 
+@sin_disp.message_handler(commands=["search"], state="*")
+async def search_request_handler(message, state:FSMContext):
+    user_id = message.from_id
+    await sin_bot.send_message(user_id, 
+                               "Укажите за какой промежуток времени вы хотите проанализировать расхождение цен",
+                                reply_markup=keyb_client_4)
+    await Testing_state.request_period_btc_async
+
+
+
+@sin_disp.message_handler(commands=["24h"], state=Testing_state.request_search_range)
+async def search_handler_24h(message, state:FSMContext):
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    logging.info(f'{time.asctime()}: start work whith user {user_id} {user_name}')
+    try:
+        bitcoin_price_mov = await get_coin_price_percentage_change('bitcoin')
+        tokens_list = await get_list_tokens_data(30, 10)
+        result_data = get_choose_token(tokens_list, bitcoin_price_mov)
+        await sin_bot.send_message(user_id, result_data, parse_mode='HTML')
+        await Testing_state.get_btc_historical_data.set()
+    except TimeoutError as e:
+        await sin_bot.send_message(user_id, f"Повторите запрос через {e.args[0]} секунд")
 
 
 @sin_disp.message_handler(commands=['alt_subscribe'], state=Testing_state.get_pure_alt_move)

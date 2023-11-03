@@ -400,3 +400,61 @@ async def subscribe_1(crypto_asset, state:FSMContext):
                 
 
         return response_inst
+
+async def get_coin_price_percentage_change(crypto_asset:str, period:str):
+    """
+     
+    """
+    async with aiohttp.ClientSession() as session:
+        my_url = f'https://api.coingecko.com/api/v3/coins/markets'
+        my_params = {
+                     'vs_currency':'usd',
+                     'ids string':crypto_asset,
+                     'price_change_percentage':period
+                     
+                     }
+        crud_data = await make_connection(session, my_url, my_params)
+        per_price_change = round(json.loads(crud_data)[0]['price_change_percentage_24h_in_currency'],2)
+        return per_price_change
+
+async def get_list_tokens_data(per_page:int, page:int, period=False):
+    async with aiohttp.ClientSession() as session:
+        my_url = f'https://api.coingecko.com/api/v3/coins/markets'
+        if period == False:
+            my_params = {
+                     'vs_currency':'usd',
+                     'per_page': per_page,
+                     'page':page
+                     }
+        else:
+            my_params = {
+                'vs_currency':'usd',
+                'per_page': per_page,
+                'page':page,
+                'price_change_percentage':period
+            }
+        crud_data = await make_connection(session, my_url, my_params)
+        tokens_list = json.loads(crud_data)
+        return tokens_list
+
+def get_list_percentage_change(token_list:list):
+    result = []
+    for token_data in token_list:
+        token = {}
+        token['symbol'], token['price_change_percentage_24h'] = token_data['symbol'], token_data['price_change_percentage_24h']
+        current_keys = [*token_data]
+        for key in current_keys:
+            if 'price_change_percentage' in key and '24' not in key:
+                token[key] = float(token_data[key])
+        result.append(token)
+    return result
+
+def get_choose_token(token_list:list, btc_price_change:dict):
+    result = []
+    for token_data in token_list:
+        relative_key = [*btc_price_change][0]
+        pure_price_mov = btc_price_change[relative_key]-token_data[relative_key]
+        if pure_price_mov>5 or pure_price_mov<-5:
+            result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price"
+            result.append(result_str)
+    return result
