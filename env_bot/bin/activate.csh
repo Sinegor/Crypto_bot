@@ -8,7 +8,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/home/user/Documents/IT/Pet_project/telegram_bot/env_bot"
+setenv VIRTUAL_ENV "/home/sinegor/documents/IT/Pet_project/crypto_bot/env_bot"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"
@@ -17,7 +17,19 @@ setenv PATH "$VIRTUAL_ENV/bin:$PATH"
 set _OLD_VIRTUAL_PROMPT="$prompt"
 
 if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "(env_bot) $prompt"
+    if ("env_bot" != "") then
+        set env_name = "env_bot"
+    else
+        if (`basename "VIRTUAL_ENV"` == "__") then
+            # special case for Aspen magic directories
+            # see https://aspen.io/
+            set env_name = `basename \`dirname "$VIRTUAL_ENV"\``
+        else
+            set env_name = `basename "$VIRTUAL_ENV"`
+        endif
+    endif
+    set prompt = "[$env_name] $prompt"
+    unset env_name
 endif
 
 alias pydoc python -m pydoc

@@ -1,4 +1,4 @@
-#!/home/user/Documents/IT/Pet_project/telegram_bot/env_bot/bin/python3.9
+#!/home/sinegor/documents/IT/Pet_project/crypto_bot/env_bot/bin/python3.8
 # -*- coding: utf-8 -*-
 import re
 import sys
