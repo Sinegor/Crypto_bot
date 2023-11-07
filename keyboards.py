@@ -1,6 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 keyb_client = ReplyKeyboardMarkup(resize_keyboard=True)
-k_1 = KeyboardButton('/history')
+k_1, k_2 = KeyboardButton('/history'), KeyboardButton('/search')
 keyb_client.add(k_1)
 
 keyb_client_1 = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -17,3 +17,9 @@ keyb_client_3 = ReplyKeyboardMarkup(resize_keyboard=True)
 keyb_client_3.add(k_cancel).add(k_alt_hist)
 
 
+keyb_client_4 = ReplyKeyboardMarkup(resize_keyboard=True)
+search_24h = KeyboardButton('/24h')
+search_1d = KeyboardButton('/1 day')
+search_7d = KeyboardButton('/7 day')
+
+keyb_client_4.add(search_24h).add(search_1d).add(search_7d)
