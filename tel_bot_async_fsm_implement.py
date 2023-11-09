@@ -15,13 +15,13 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
 
 
-from messages import START_MESSAGE
+from messages import START_MESSAGE, RANGE_OF_SEARCH
 from async_script_fsm_implement import set_starting_data, subscribe, string_handling, \
                                  subscribe_1, check_actual_price_mov_data, \
                                  check_actual_alt_state, check_actual_btc_history,\
                                  check_historical_pure_price_mov_data, clearning_str, handler_history_data,\
                                  get_choose_token, get_list_percentage_change, get_list_tokens_data,\
-                                 get_coin_price_percentage_change
+                                 get_coin_price_percentage_change, set_time_range
                                  
 
 from keyboards import keyb_client, keyb_client_1, keyb_client_2, keyb_client_3, keyb_client_4
@@ -87,27 +87,52 @@ async def history_handler(message, state:FSMContext):
 
 @sin_disp.message_handler(commands=["search"], state="*")
 async def search_request_handler(message, state:FSMContext):
+    """
+    Start the mode of searching for promising alts on the basis of missynchronization
+    with the bitcoin movement. Initially it is necessary to choose a time period of search.
+    """
     user_id = message.from_id
     await sin_bot.send_message(user_id, 
                                "Укажите за какой промежуток времени вы хотите проанализировать расхождение цен",
                                 reply_markup=keyb_client_4)
-    await Testing_state.request_period_btc_async
+    await Testing_state.request_period_btc_async.set()
+
+
+
+# @sin_disp.message_handler(commands=["24h"], state=Testing_state.request_period_btc_async)
+# async def search_handler_24h(message, commands, state:FSMContext):
+#     """
+#     At this stage it is necessary to determine the field of search of 
+#     alts within their rating by market capitalization.  
+ 
+#     """
+#     user_id = message.from_id
+#     user_name = message.from_user.full_name
+#     cur_command = commands[0]
+#     await set_time_range('24h') #save the selected time period in MemoryStorage
+#     await sin_bot.send_message(user_id, RANGE_OF_SEARCH.format(user_name), reply_markup=keyb_client_2)
+#     await Testing_state.request_search_range.set()
 
 
 
 @sin_disp.message_handler(commands=["24h"], state=Testing_state.request_search_range)
 async def search_handler_24h(message, state:FSMContext):
+    
     user_id = message.from_id
     user_name = message.from_user.full_name
     logging.info(f'{time.asctime()}: start work whith user {user_id} {user_name}')
     try:
         bitcoin_price_mov = await get_coin_price_percentage_change('bitcoin')
         tokens_list = await get_list_tokens_data(30, 10)
-        result_data = get_choose_token(tokens_list, bitcoin_price_mov)
+        crud_data = get_choose_token(tokens_list, bitcoin_price_mov,'24h')
+        result_data = handler_history_data(crud_data)
         await sin_bot.send_message(user_id, result_data, parse_mode='HTML')
         await Testing_state.get_btc_historical_data.set()
     except TimeoutError as e:
         await sin_bot.send_message(user_id, f"Повторите запрос через {e.args[0]} секунд")
+
+
+
 
 
 @sin_disp.message_handler(commands=['alt_subscribe'], state=Testing_state.get_pure_alt_move)

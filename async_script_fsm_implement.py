@@ -83,6 +83,10 @@ async def check_actual_alt_state(alt,
             if data['price'][alt]['coins_last_prices']['last_today_price']['date'] != None:
                 data['price'][alt]['coins_last_prices']['last_today_price']['date'] =datetime.datetime.fromtimestamp(time.time()-84600).date().strftime('%d-%m-%Y')
         return 'second request' 
+
+async def set_time_range(my_state:FSMContext, range:str):
+    async with my_state.proxy() as data:
+        data['time_range'] = range
     
 
 async def check_actual_price_mov_data(coin, state:FSMContext):
@@ -401,9 +405,10 @@ async def subscribe_1(crypto_asset, state:FSMContext):
 
         return response_inst
 
-async def get_coin_price_percentage_change(crypto_asset:str, period:str):
+async def get_coin_price_percentage_change(crypto_asset:str, period:str='24h') ->float:
     """
-     
+     Returns the total percentage movement of an asset over a period. For a 24-hour default. 
+     The possible period parameter value is 1h, 24h, 7d, 14d, 30d, 200d, 1y. 
     """
     async with aiohttp.ClientSession() as session:
         my_url = f'https://api.coingecko.com/api/v3/coins/markets'
@@ -414,25 +419,27 @@ async def get_coin_price_percentage_change(crypto_asset:str, period:str):
                      
                      }
         crud_data = await make_connection(session, my_url, my_params)
-        per_price_change = round(json.loads(crud_data)[0]['price_change_percentage_24h_in_currency'],2)
+        per_price_change = round(json.loads(crud_data)[0][f'price_change_percentage_{period}_in_currency'],2)
         return per_price_change
 
-async def get_list_tokens_data(per_page:int, page:int, period=False):
+async def get_list_tokens_data(per_page:int, page:int, period:str = '24h'):
+    """
+    Gets a list of alts from the general capitalization rating. This rating is broken down into pages. 
+    The "per_page" parameter indicates how many altos are on each page, the "page" parameter indicates which page we want. 
+    The "period" parameter determines for what period of time we are interested in the percentage change of the asset price.
+
+    """
+
     async with aiohttp.ClientSession() as session:
         my_url = f'https://api.coingecko.com/api/v3/coins/markets'
-        if period == False:
-            my_params = {
+        my_params = {
                      'vs_currency':'usd',
+                     'order':'market_cap_desc',
                      'per_page': per_page,
-                     'page':page
+                     'page':page,
+                     'price_change_percentage':period
                      }
-        else:
-            my_params = {
-                'vs_currency':'usd',
-                'per_page': per_page,
-                'page':page,
-                'price_change_percentage':period
-            }
+        
         crud_data = await make_connection(session, my_url, my_params)
         tokens_list = json.loads(crud_data)
         return tokens_list
@@ -449,12 +456,11 @@ def get_list_percentage_change(token_list:list):
         result.append(token)
     return result
 
-def get_choose_token(token_list:list, btc_price_change:dict):
+def get_choose_token(token_list:list, btc_price_change:float, period):
     result = []
     for token_data in token_list:
-        relative_key = [*btc_price_change][0]
-        pure_price_mov = btc_price_change[relative_key]-token_data[relative_key]
+        pure_price_mov = token_data[f"price_change_percentage_{period}_in_currency"]-btc_price_change
         if pure_price_mov>5 or pure_price_mov<-5:
-            result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price"
+            result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price\n"
             result.append(result_str)
     return result
