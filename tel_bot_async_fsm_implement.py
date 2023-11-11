@@ -15,13 +15,14 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
 
 
-from messages import START_MESSAGE, RANGE_OF_SEARCH
+from messages import START_MESSAGE, RANGE_OF_SEARCH, SEARCH_OF_START_PUMP
 from async_script_fsm_implement import set_starting_data, subscribe, string_handling, \
                                  subscribe_1, check_actual_price_mov_data, \
                                  check_actual_alt_state, check_actual_btc_history,\
                                  check_historical_pure_price_mov_data, clearning_str, handler_history_data,\
                                  get_choose_token, get_list_percentage_change, get_list_tokens_data,\
-                                 get_coin_price_percentage_change, set_time_range
+                                 get_coin_price_percentage_change, set_time_range, get_time_range,\
+                                 get_pumping_tokens
                                  
 
 from keyboards import keyb_client, keyb_client_1, keyb_client_2, keyb_client_3, keyb_client_4
@@ -39,6 +40,7 @@ class Testing_state(StatesGroup):
     request_period_btc_async = State()
     request_search_range = State()
     get_search_alt_for_trading = State()
+    request_search_point_pump = State()
     get_alt_historical_data = State()
     get_pure_alt_move = State()
     request_subscribe = State()
@@ -99,33 +101,126 @@ async def search_request_handler(message, state:FSMContext):
 
 
 
-# @sin_disp.message_handler(commands=["24h"], state=Testing_state.request_period_btc_async)
-# async def search_handler_24h(message, commands, state:FSMContext):
-#     """
-#     At this stage it is necessary to determine the field of search of 
-#     alts within their rating by market capitalization.  
+
+
+@sin_disp.message_handler(commands=["24h"], state=Testing_state.request_period_btc_async)
+async def search_handler_24h(message:types.bot_command, state:FSMContext):
+    """
+    At this stage it is necessary to determine the field of search of 
+    alts within their rating by market capitalization.  
  
-#     """
-#     user_id = message.from_id
-#     user_name = message.from_user.full_name
-#     cur_command = commands[0]
-#     await set_time_range('24h') #save the selected time period in MemoryStorage
-#     await sin_bot.send_message(user_id, RANGE_OF_SEARCH.format(user_name), reply_markup=keyb_client_2)
-#     await Testing_state.request_search_range.set()
-
-
-
-@sin_disp.message_handler(commands=["24h"], state=Testing_state.request_search_range)
-async def search_handler_24h(message, state:FSMContext):
-    
+    """
     user_id = message.from_id
     user_name = message.from_user.full_name
-    logging.info(f'{time.asctime()}: start work whith user {user_id} {user_name}')
+    
+    await set_time_range(state,message.text) #save the selected time period in MemoryStorage
+    await sin_bot.send_message(user_id, RANGE_OF_SEARCH.format(user_name), reply_markup=keyb_client_2)
+    await Testing_state.request_search_range.set()
+
+@sin_disp.message_handler(commands=["7d"], state=Testing_state.request_period_btc_async)
+async def search_handler_1d(message:types.bot_command, state:FSMContext):
+    """
+    At this stage it is necessary to determine the field of search of 
+    alts within their rating by market capitalization.  
+ 
+    """
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    
+    await set_time_range(state,message.text) #save the selected time period in MemoryStorage
+    await sin_bot.send_message(user_id, RANGE_OF_SEARCH.format(user_name), reply_markup=keyb_client_2)
+    await Testing_state.request_search_range.set()
+
+@sin_disp.message_handler(commands=["1h"], state=Testing_state.request_period_btc_async)
+async def search_handler_1h(message:types.bot_command, state:FSMContext):
+    """
+    At this stage it is necessary to determine the field of search of 
+    alts within their rating by market capitalization.  
+ 
+    """
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    
+    await set_time_range(state,message.text) #save the selected time period in MemoryStorage
+    await sin_bot.send_message(user_id, RANGE_OF_SEARCH.format(user_name), reply_markup=keyb_client_2)
+    await Testing_state.request_search_range.set()
+
+@sin_disp.message_handler(commands=["pump"], state=Testing_state.request_period_btc_async)
+async def search_handler_start_pump(message:types.message, state:FSMContext):
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    
+    # await set_time_range(state,message.text) #save the selected time period in MemoryStorage
+    await sin_bot.send_message(user_id, SEARCH_OF_START_PUMP.format(user_name), reply_markup=keyb_client_2)
+    await Testing_state.request_search_point_pump.set()
+
+
+@sin_disp.message_handler(commands=["cancel"], state=Testing_state.request_period_btc_async)
+async def handler_cancel_5 (message: types.Message, state:FSMContext):
+    """
+    State of Memory Storage reset to None
+    """
+    user_id = message.from_id
+    await Testing_state.first()
+    await sin_bot.send_message(user_id, text='Вы вернулись на первоначальный экран', reply_markup=keyb_client)
+
+
+@sin_disp.message_handler(commands=["cancel"], state=Testing_state.request_search_range)
+async def handler_cancel_5 (message: types.Message, state:FSMContext):
+    """
+    State of Memory Storage reset to None
+    """
+    user_id = message.from_id
+    await Testing_state.first()
+    await sin_bot.send_message(user_id, text='Вы вернулись на первоначальный экран', reply_markup=keyb_client)
+
+
+@sin_disp.message_handler(commands=["cancel"], state=Testing_state.request_search_point_pump)
+async def handler_cancel_5 (message: types.Message, state:FSMContext):
+    """
+    State of Memory Storage reset to None
+    """
+    user_id = message.from_id
+    await Testing_state.first()
+    await sin_bot.send_message(user_id, text='Вы вернулись на первоначальный экран', reply_markup=keyb_client)
+
+
+@sin_disp.message_handler(state=Testing_state.request_search_point_pump)
+async def search_pump_point(message:types.message, state:FSMContext):
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    #logging.info(f'{time.asctime()}: start work whith user {user_id} {user_name}')
+    range_alt = message.text    
+    SEARCH_PERIOD = '1h,24h,7d'
     try:
-        bitcoin_price_mov = await get_coin_price_percentage_change('bitcoin')
-        tokens_list = await get_list_tokens_data(30, 10)
-        crud_data = get_choose_token(tokens_list, bitcoin_price_mov,'24h')
+        bitcoin_price_mov = await get_coin_price_percentage_change('bitcoin', SEARCH_PERIOD)
+        tokens_list = await get_list_tokens_data(250, range_alt, SEARCH_PERIOD)
+        crud_data = get_pumping_tokens(tokens_list, bitcoin_price_mov)
+        if type(crud_data)==list:
+            result_data = handler_history_data(crud_data)
+        else:
+            result_data = crud_data
+        await sin_bot.send_message(user_id, result_data, parse_mode='HTML', reply_markup=keyb_client_4)
+        await Testing_state.request_period_btc_async.set()
+    except TimeoutError as e:
+        await sin_bot.send_message(user_id, f"Повторите запрос через {e.args[0]} секунд")
+
+
+
+
+@sin_disp.message_handler(state=Testing_state.request_search_range)
+async def search_handler(message:types.message, state:FSMContext):
+    user_id = message.from_id
+    user_name = message.from_user.full_name
+    #logging.info(f'{time.asctime()}: start work whith user {user_id} {user_name}')
+    amount_alts, range_alt = message.text.split(' ')
+    cur_period = await get_time_range(state)    
+    try:
+        bitcoin_price_mov = await get_coin_price_percentage_change('bitcoin', cur_period)
+        tokens_list = await get_list_tokens_data(amount_alts, range_alt, cur_period)
+        crud_data = get_choose_token(tokens_list, bitcoin_price_mov,cur_period)
         result_data = handler_history_data(crud_data)
+
         await sin_bot.send_message(user_id, result_data, parse_mode='HTML')
         await Testing_state.get_btc_historical_data.set()
     except TimeoutError as e:

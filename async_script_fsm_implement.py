@@ -86,7 +86,12 @@ async def check_actual_alt_state(alt,
 
 async def set_time_range(my_state:FSMContext, range:str):
     async with my_state.proxy() as data:
-        data['time_range'] = range
+        data['time_range_for_alt_serch'] = range[1:]
+
+async def get_time_range(my_state:FSMContext):
+    async with my_state.proxy() as data:
+        return data['time_range_for_alt_serch']
+        
     
 
 async def check_actual_price_mov_data(coin, state:FSMContext):
@@ -342,7 +347,7 @@ def clearning_str(str, *mark_ignor):
         return str.translate({ord(i): None for i in clear_list })
 
 
-def handler_history_data(list):
+def handler_history_data(list:list):
     """
     Function for cleaning the received historical data 
     """
@@ -419,7 +424,13 @@ async def get_coin_price_percentage_change(crypto_asset:str, period:str='24h') -
                      
                      }
         crud_data = await make_connection(session, my_url, my_params)
-        per_price_change = round(json.loads(crud_data)[0][f'price_change_percentage_{period}_in_currency'],2)
+        if ',' not in period:
+            per_price_change = round(json.loads(crud_data)[0][f'price_change_percentage_{period}_in_currency'],2)
+            return per_price_change
+        time_ranges = period.split(',')
+        per_price_change ={}
+        for period in time_ranges:
+            per_price_change[period] = round(json.loads(crud_data)[0][f'price_change_percentage_{period}_in_currency'],2)
         return per_price_change
 
 async def get_list_tokens_data(per_page:int, page:int, period:str = '24h'):
@@ -463,4 +474,28 @@ def get_choose_token(token_list:list, btc_price_change:float, period):
         if pure_price_mov>5 or pure_price_mov<-5:
             result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price\n"
             result.append(result_str)
+    if len(result)==0:
+        return "Альткоинов, удовлетворяющих заданным критериям не найдено"
+        
     return result
+
+def get_pumping_tokens(token_list:list, btc_data:dict):
+    
+        result = []
+        for token_data in token_list:
+            try:
+                pure_price_mov_7d = float(token_data[f"price_change_percentage_24h_in_currency"])-float(btc_data['7d'])
+                pure_price_mov_24h =float(token_data[f"price_change_percentage_24h_in_currency"])-float(btc_data['24h'])
+                if -3<pure_price_mov_24h<3 and -3<pure_price_mov_7d<3:
+                    pure_price_mov_1h = token_data[f"price_change_percentage_24h_in_currency"]-btc_data['1h']
+                    if pure_price_mov_1h>5 or pure_price_mov_1h<-5:
+                        result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov_1h} percent missynchronization with Bitcoin price\n"
+                        result.append(result_str)
+                else:
+                    continue
+            except TypeError:
+                continue
+        if len(result)==0:
+            return "Альткоинов, удовлетворяющих заданным критериям не найдено"
+        return result
+    
