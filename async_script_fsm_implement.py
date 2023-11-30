@@ -470,10 +470,13 @@ def get_list_percentage_change(token_list:list):
 def get_choose_token(token_list:list, btc_price_change:float, period):
     result = []
     for token_data in token_list:
-        pure_price_mov = token_data[f"price_change_percentage_{period}_in_currency"]-btc_price_change
-        if pure_price_mov>5 or pure_price_mov<-5:
-            result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price\n"
-            result.append(result_str)
+        try:
+            pure_price_mov = token_data[f"price_change_percentage_{period}_in_currency"]-btc_price_change
+            if pure_price_mov>5 or pure_price_mov<-5:
+                result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov} percent missynchronization with Bitcoin price\n"
+                result.append(result_str)
+        except TypeError:
+            continue
     if len(result)==0:
         return "Альткоинов, удовлетворяющих заданным критериям не найдено"
         
@@ -488,7 +491,7 @@ def get_pumping_tokens(token_list:list, btc_data:dict):
                 pure_price_mov_24h =float(token_data[f"price_change_percentage_24h_in_currency"])-float(btc_data['24h'])
                 if -3<pure_price_mov_24h<3 and -3<pure_price_mov_7d<3:
                     pure_price_mov_1h = token_data[f"price_change_percentage_24h_in_currency"]-btc_data['1h']
-                    if pure_price_mov_1h>5 or pure_price_mov_1h<-5:
+                    if pure_price_mov_1h>3 or pure_price_mov_1h<-3:
                         result_str = f"Pay attention to {token_data['symbol']} - {pure_price_mov_1h} percent missynchronization with Bitcoin price\n"
                         result.append(result_str)
                 else:
