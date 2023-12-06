@@ -86,7 +86,10 @@ async def check_actual_alt_state(alt,
 
 async def set_time_range(my_state:FSMContext, range:str):
     async with my_state.proxy() as data:
-        data['time_range_for_alt_serch'] = range[1:]
+        if range == '/week':
+            data['time_range_for_alt_serch'] = '7d'
+        else:    
+            data['time_range_for_alt_serch'] = range[1:]
 
 async def get_time_range(my_state:FSMContext):
     async with my_state.proxy() as data:

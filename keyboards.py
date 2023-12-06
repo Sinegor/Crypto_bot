@@ -21,7 +21,7 @@ keyb_client_3.add(k_cancel).add(k_alt_hist)
 keyb_client_4 = ReplyKeyboardMarkup(resize_keyboard=True)
 search_1h = KeyboardButton('/1h')
 search_1d = KeyboardButton('/24h')
-search_7d = KeyboardButton('/7 day')
+search_7d = KeyboardButton('/week')
 search_pump =KeyboardButton('/pump')
 k_cancel = KeyboardButton('/Cancel')
 
